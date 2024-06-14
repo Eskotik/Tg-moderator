@@ -7,7 +7,6 @@ import re
 from aiogram import executor, types, Bot, Dispatcher, types
 from aiogram.dispatcher.filters import AdminFilter, IsReplyFilter
 from random import randint
-import requests
 from millify import millify
 import os
 from dotenv import load_dotenv
@@ -27,27 +26,73 @@ whiteChannelId = os.getenv("WHITE_CHANNEL_ID")
 
 bot = Bot(token=token1, parse_mode=types.ParseMode.HTML)
 dp = Dispatcher(bot)
+CoinMarketCapKey = os.getenv("COINMARKETCAP_KEY")
+
+# with open("tickers.json") as f:
+#     COIN_TICKERS = json.load(f)
 
 
-with open("tickers.json") as f:
-    COIN_TICKERS = json.load(f)
+# def get_coin_price(coin_ticker):
+#     coin_id = COIN_TICKERS.get(coin_ticker.lower())
+#     if not coin_id:
+#         return f"Не удалось найти данные о {coin_ticker}"
+
+#     url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true"
+#     try:
+#         response = requests.get(url)
+#         response.raise_for_status()
+#         data = response.json()
+#         if coin_id in data:
+#             coin_data = data[coin_id]
+#             price = coin_data["usd"]
+#             market_cap = coin_data.get("usd_market_cap", 0)
+#             volume_24h = coin_data.get("usd_24h_vol", 0)
+#             market_cap_formatted = millify(market_cap, precision=2)
+#             volume_24h_formatted = millify(volume_24h, precision=2)
+#             if price > 1:
+#                 price_formatted = f"{price:.2f}"
+#             elif price > 0.01 and price < 1:
+#                 price_formatted = f"{price:.5f}"
+#             else:
+#                 price_formatted = f"{price:.9f}"
+#             return (
+#                 f"Цена {coin_ticker.upper()}: ${price_formatted}\n"
+#                 f"Рыночная капитализация: ${market_cap_formatted}\n"
+#                 f"24ч Объем: ${volume_24h_formatted}"
+#             )
+#         else:
+#             return f"Не удалось найти данные о {coin_ticker}"
+#     except requests.RequestException as e:
+#         return f"Ошибка запроса API: {e}"
+
+from requests import Session
+from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
+import json
 
 
-def get_coin_price(coin_ticker):
-    coin_id = COIN_TICKERS.get(coin_ticker.lower())
-    if not coin_id:
-        return f"Не удалось найти данные о {coin_ticker}"
+def get_coin_price(coin_symbol):
+    url = "https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest"
+    parameters = {"symbol": coin_symbol.upper()}
+    headers = {
+        "Accepts": "application/json",
+        "X-CMC_PRO_API_KEY": "f97a825f-6f87-4d4c-8e9e-56af3743dd19",
+    }
 
-    url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true"
+    session = Session()
+    session.headers.update(headers)
+
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        if coin_id in data:
-            coin_data = data[coin_id]
-            price = coin_data["usd"]
-            market_cap = coin_data.get("usd_market_cap", 0)
-            volume_24h = coin_data.get("usd_24h_vol", 0)
+        response = session.get(url, params=parameters)
+        data = json.loads(response.text)
+
+        if "data" in data and coin_symbol.upper() in data["data"]:
+            coin_data = data["data"][coin_symbol.upper()][0]
+            name = coin_data["name"]
+            price = coin_data["quote"]["USD"]["price"]
+            percent_24h = coin_data["quote"]["USD"]["percent_change_24h"]
+            volume_24h = coin_data["quote"]["USD"]["volume_24h"]
+            market_cap = coin_data["quote"]["USD"]["market_cap"]
+            percent_24h_formatted = f"{percent_24h:.2f}"
             market_cap_formatted = millify(market_cap, precision=2)
             volume_24h_formatted = millify(volume_24h, precision=2)
             if price > 1:
@@ -56,15 +101,21 @@ def get_coin_price(coin_ticker):
                 price_formatted = f"{price:.5f}"
             else:
                 price_formatted = f"{price:.9f}"
+                # if percent24h have a +, add a "+"
             return (
-                f"Цена {coin_ticker.upper()}: ${price_formatted}\n"
-                f"Рыночная капитализация: ${market_cap_formatted}\n"
-                f"24ч Объем: ${volume_24h_formatted}"
+                f"{name} ({coin_symbol.upper()}):"
+                f" ${price_formatted}\n"
+                f"Изменение цены за 24ч: {percent_24h_formatted}%\n"
+                f"Объем торгов за 24ч: ${volume_24h_formatted}\n"
+                f"Рыночная капитализация: ${market_cap_formatted}"
             )
         else:
-            return f"Не удалось найти данные о {coin_ticker}"
-    except requests.RequestException as e:
-        return f"Ошибка запроса API: {e}"
+            return f"Не удалось найти информацию о монете {coin_symbol.upper()}"
+
+    except (ConnectionError, Timeout, TooManyRedirects) as e:
+        return f"Ошибка при получении данных: {e}"
+    except KeyError:
+        return f"Ошибка: Неожиданная структура данных в ответе API для {coin_symbol.upper()}"
 
 
 @dp.message_handler(commands=["p"])
@@ -72,20 +123,40 @@ async def get_price(message: types.Message):
     parts = message.text.split()
     if len(parts) < 2:
         await message.reply(
-            "Пожалуйста, укажите монету после команды /p\nНапример: /p bitcoin"
+            "Пожалуйста, укажите символ монеты после команды /p\nНапример: /p BTC"
         )
         return
 
-    coin_id = " ".join(parts[1:]).lower()
+    coin_symbol = parts[1].upper()
 
     try:
-        result = get_coin_price(coin_id)
-
+        result = get_coin_price(coin_symbol)
         await message.reply(result)
     except Exception as e:
-        logging.error(f"Ошибка при получении цены для {coin_id}: {e}")
+        logging.error(f"Ошибка при получении данных для {coin_symbol}: {e}")
         await message.reply(
-            f"Произошла ошибка при получении данных для {coin_id}. Пожалуйста, попробуйте позже или проверьте правильность идентификатора монеты."
+            f"Произошла ошибка при получении данных для {coin_symbol}. Пожалуйста, попробуйте позже или проверьте правильность символа монеты."
+        )
+
+
+@dp.message_handler(commands=["p"])
+async def get_price(message: types.Message):
+    parts = message.text.split()
+    if len(parts) < 2:
+        await message.reply(
+            "Пожалуйста, укажите символ монеты после команды /p\nНапример: /p BTC"
+        )
+        return
+
+    coin_symbol = parts[1].upper()
+
+    try:
+        result = get_coin_price(coin_symbol)
+        await message.reply(result)
+    except Exception as e:
+        logging.error(f"Ошибка при получении цены для {coin_symbol}: {e}")
+        await message.reply(
+            f"Произошла ошибка при получении данных для {coin_symbol}. Пожалуйста, попробуйте позже или проверьте правильность символа монеты."
         )
 
 
@@ -415,11 +486,13 @@ async def handle_text_messages(message: types.Message):
                 message, username, user_id, "запрещенные слова и фразы"
             )
             return
-
+        # Trading View unlock
         for entity in message.entities:
-            if entity.type in ["url", "text_link", "mention"]:
-                await handle_violation(message, username, user_id, "ссылки")
-                break
+            if entity.type == "url":
+                url = message.text[entity.offset : entity.offset + entity.length]
+                if not url.startswith("https://www.tradingview.com/"):
+                    await handle_violation(message, username, user_id, "ссылки")
+                    break  # This break statement should be inside the if block
 
 
 async def handle_violation(message, username, user_id, violation_type):
