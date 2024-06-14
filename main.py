@@ -28,42 +28,6 @@ bot = Bot(token=token1, parse_mode=types.ParseMode.HTML)
 dp = Dispatcher(bot)
 CoinMarketCapKey = os.getenv("COINMARKETCAP_KEY")
 
-# with open("tickers.json") as f:
-#     COIN_TICKERS = json.load(f)
-
-
-# def get_coin_price(coin_ticker):
-#     coin_id = COIN_TICKERS.get(coin_ticker.lower())
-#     if not coin_id:
-#         return f"Не удалось найти данные о {coin_ticker}"
-
-#     url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true"
-#     try:
-#         response = requests.get(url)
-#         response.raise_for_status()
-#         data = response.json()
-#         if coin_id in data:
-#             coin_data = data[coin_id]
-#             price = coin_data["usd"]
-#             market_cap = coin_data.get("usd_market_cap", 0)
-#             volume_24h = coin_data.get("usd_24h_vol", 0)
-#             market_cap_formatted = millify(market_cap, precision=2)
-#             volume_24h_formatted = millify(volume_24h, precision=2)
-#             if price > 1:
-#                 price_formatted = f"{price:.2f}"
-#             elif price > 0.01 and price < 1:
-#                 price_formatted = f"{price:.5f}"
-#             else:
-#                 price_formatted = f"{price:.9f}"
-#             return (
-#                 f"Цена {coin_ticker.upper()}: ${price_formatted}\n"
-#                 f"Рыночная капитализация: ${market_cap_formatted}\n"
-#                 f"24ч Объем: ${volume_24h_formatted}"
-#             )
-#         else:
-#             return f"Не удалось найти данные о {coin_ticker}"
-#     except requests.RequestException as e:
-#         return f"Ошибка запроса API: {e}"
 
 from requests import Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
