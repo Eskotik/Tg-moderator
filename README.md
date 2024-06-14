@@ -24,8 +24,8 @@ This is a Telegram bot implemented using the `aiogram` library. The bot provides
 ## Installation
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/telegram-bot.git
-    cd telegram-bot
+    git clone https://github.com/Eskotik/Tg-moderator.git
+    cd Tg-moderator
     ```
 
 2. Install the required dependencies:
@@ -37,7 +37,7 @@ This is a Telegram bot implemented using the `aiogram` library. The bot provides
 
 4. Run the bot:
     ```sh
-    python bot.py
+    python main.py
     ```
 
 ## Usage
@@ -46,10 +46,10 @@ This is a Telegram bot implemented using the `aiogram` library. The bot provides
 
 ## Environment Variables
 The bot requires several environment variables. Create a `.env` file in the root of your project and add the following variables:
-`ADMIN_ID=<your_admin_id>`
-`BOT_TOKEN=<your_bot_token>`
-`EXEMPT_CHANNEL_ID=<your_exempt_channel_id>`
-`WHITE_CHANNEL_ID=<your_white_channel_id>`
+- `ADMIN_ID=<your_admin_id>`
+- `BOT_TOKEN=<your_bot_token>`
+- `EXEMPT_CHANNEL_ID=<your_exempt_channel_id>`
+- `WHITE_CHANNEL_ID=<your_white_channel_id>`
 
 ## Commands
 ### User Commands
