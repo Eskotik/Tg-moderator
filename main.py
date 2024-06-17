@@ -56,7 +56,9 @@ def get_coin_price(coin_symbol):
             percent_24h = coin_data["quote"]["USD"]["percent_change_24h"]
             volume_24h = coin_data["quote"]["USD"]["volume_24h"]
             market_cap = coin_data["quote"]["USD"]["market_cap"]
-            percent_24h_formatted = f"{percent_24h:.2f}"
+            percent_24h_formatted = (
+                f"+{percent_24h:.2f}" if percent_24h > 0 else f"{percent_24h:.2f}"
+            )
             market_cap_formatted = millify(market_cap, precision=2)
             volume_24h_formatted = millify(volume_24h, precision=2)
             if price > 1:
@@ -65,7 +67,7 @@ def get_coin_price(coin_symbol):
                 price_formatted = f"{price:.5f}"
             else:
                 price_formatted = f"{price:.9f}"
-                # if percent24h have a +, add a "+"
+
             return (
                 f"{name} ({coin_symbol.upper()}):"
                 f" ${price_formatted}\n"
@@ -98,27 +100,6 @@ async def get_price(message: types.Message):
         await message.reply(result)
     except Exception as e:
         logging.error(f"Ошибка при получении данных для {coin_symbol}: {e}")
-        await message.reply(
-            f"Произошла ошибка при получении данных для {coin_symbol}. Пожалуйста, попробуйте позже или проверьте правильность символа монеты."
-        )
-
-
-@dp.message_handler(commands=["p"])
-async def get_price(message: types.Message):
-    parts = message.text.split()
-    if len(parts) < 2:
-        await message.reply(
-            "Пожалуйста, укажите символ монеты после команды /p\nНапример: /p BTC"
-        )
-        return
-
-    coin_symbol = parts[1].upper()
-
-    try:
-        result = get_coin_price(coin_symbol)
-        await message.reply(result)
-    except Exception as e:
-        logging.error(f"Ошибка при получении цены для {coin_symbol}: {e}")
         await message.reply(
             f"Произошла ошибка при получении данных для {coin_symbol}. Пожалуйста, попробуйте позже или проверьте правильность символа монеты."
         )
