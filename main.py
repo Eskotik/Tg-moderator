@@ -4,12 +4,16 @@ import time
 import datetime
 import asyncio
 import re
+import os
+import json
 from aiogram import executor, types, Bot, Dispatcher, types
 from aiogram.dispatcher.filters import AdminFilter, IsReplyFilter
 from random import randint
 from millify import millify
-import os
 from dotenv import load_dotenv
+from requests import Session
+from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
+
 
 load_dotenv()
 
@@ -26,12 +30,6 @@ whiteChannelId = os.getenv("WHITE_CHANNEL_ID")
 
 bot = Bot(token=token1, parse_mode=types.ParseMode.HTML)
 dp = Dispatcher(bot)
-CoinMarketCapKey = os.getenv("COINMARKETCAP_KEY")
-
-
-from requests import Session
-from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
-import json
 
 
 def get_coin_price(coin_symbol):
