@@ -50,6 +50,30 @@ The bot requires several environment variables. Create a `.env` file in the root
 - `BOT_TOKEN=<your_bot_token>`
 - `EXEMPT_CHANNEL_ID=<your_exempt_channel_id>`
 - `WHITE_CHANNEL_ID=<your_white_channel_id>`
+- `COINMARKETCAP_KEY=<your_coinmarketcap_api_key>`
+
+## Project Structure
+```
+Tg-moderator/
+├── main.py                  # Entry point
+├── requirements.txt
+├── Procfile
+├── runtime.txt
+└── bot/
+    ├── config.py            # Environment variables and paths
+    ├── loader.py            # Bot and Dispatcher initialization
+    ├── handlers/
+    │   ├── admin.py         # !ban, !mute, !pin, etc.
+    │   ├── crypto.py        # /p command
+    │   ├── events.py        # Welcome/leave events
+    │   ├── moderation.py    # Warnings
+    │   └── user.py          # /me, /report, /dont_click_me
+    ├── services/
+    │   ├── crypto.py        # CoinMarketCap API
+    │   └── forbidden_words.py
+    └── utils/
+        └── helpers.py       # Shared utilities
+```
 
 ## Commands
 ### User Commands
@@ -68,9 +92,6 @@ The bot requires several environment variables. Create a `.env` file in the root
 
 ### Fun Commands
 - `/dont_click_me` - Randomly mute the user who sent the command for 1 to 10 minutes.
-
-## Forbidden Words
-You can customize the list of forbidden words and phrases by editing the `forbidden_words.json` file. The bot will check for these words in messages and take appropriate action if they are found.
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
